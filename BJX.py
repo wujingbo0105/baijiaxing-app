@@ -1,20 +1,10 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
-import numpy as np
-import matplotlib
-from matplotlib.font_manager import FontProperties
-import os
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
-# ======================== 1. 强制加载内嵌中文字体（核心！） ========================
-# 加载仓库里的思源黑体
-font_path = 'SourceHanSerifCN-Bold.otf'
-if os.path.exists(font_path):
-    font_prop = FontProperties(fname=font_path)
-    matplotlib.rcParams['font.family'] = font_prop.get_name()
-matplotlib.rcParams['axes.unicode_minus'] = False
-
-# 页面基础配置
+# ======================== 1. 基础配置 ========================
 st.set_page_config(
     page_title="百家姓可视化项目",
     page_icon="🏮",
@@ -74,7 +64,7 @@ st.info(f"当前筛选结果：共 {len(df_filtered)} 个姓氏（总数据：43
 st.divider()
 
 # ======================== 4. 核心图表1：Streamlit 原生地图 ========================
-st.subheader("🗺️ 姓氏起源地分布")
+st.subheader("🗺️ 姓氏起源地分布（带省份轮廓）")
 
 province_lonlat = {
     "北京": [116.40, 39.90], "天津": [117.20, 39.13], "河北": [114.30, 38.04], "山西": [112.53, 37.87],
@@ -88,13 +78,13 @@ province_lonlat = {
 }
 
 df_map = df_filtered.copy()
-df_map["lon"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 30.67])[0])
-df_map["lat"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 30.67])[1])
+df_map["经度"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 30.67])[0])
+df_map["纬度"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 30.67])[1])
 
 st.map(
     df_map,
-    latitude="lat",
-    longitude="lon",
+    latitude="纬度",
+    longitude="经度",
     size="人口占比",
     color="#0066cc",
     zoom=4 if province == "全部" else 7
@@ -102,93 +92,88 @@ st.map(
 
 st.divider()
 
-# ======================== 5. 核心图表2：Top10柱状图 ========================
+# ======================== 5. 核心图表2：Top10柱状图（Plotly版） ========================
 st.subheader("📊 姓氏人口占比Top10")
 df_top10 = df_filtered.sort_values("人口占比", ascending=False).head(10)
 
-fig, ax = plt.subplots(figsize=(10, 5))
-colors = plt.cm.Blues(np.linspace(0.4, 0.9, len(df_top10)))
-bars = ax.bar(
-    df_top10["姓氏"],
-    df_top10["人口占比"],
-    color=colors,
-    edgecolor="#0066cc",
-    linewidth=1
+fig_bar = px.bar(
+    df_top10,
+    x="姓氏",
+    y="人口占比",
+    title=f"{'全国' if province == '全部' else province} 姓氏人口占比Top10",
+    color="人口占比",
+    color_continuous_scale="Blues",
+    labels={"姓氏": "姓氏", "人口占比": "人口占比(%)"},
+    text_auto=".2f",  # 显示数值，保留2位小数
 )
-
-ax.set_xlabel("姓氏", fontsize=10, color="#333")
-ax.set_ylabel("人口占比(%)", fontsize=10, color="#333")
-ax.set_title(f"{'全国' if province == '全部' else province} 姓氏人口占比Top10", fontsize=12, color="#0066cc", pad=10)
-ax.set_facecolor("#f0f2f6")
-fig.patch.set_facecolor("#f0f2f6")
-
-ax.grid(True, axis="y", alpha=0.3, color="#0066cc")
-ax.set_axisbelow(True)
-ax.tick_params(axis="x", colors="#333", rotation=45, labelsize=9)
-ax.tick_params(axis="y", colors="#333", labelsize=9)
-
-for bar in bars:
-    height = bar.get_height()
-    ax.text(
-        bar.get_x() + bar.get_width()/2.,
-        height + 0.05,
-        f"{height:.2f}%",
-        ha="center", va="bottom", color="#0066cc", fontsize=8
-    )
-st.pyplot(fig)
+# 美化样式
+fig_bar.update_layout(
+    plot_bgcolor="#f0f2f6",
+    paper_bgcolor="#f0f2f6",
+    font={"family": "SimHei, Microsoft YaHei", "color": "#333"},
+    title={"font_size": 16, "color": "#0066cc"},
+    xaxis={"tickangle": 45, "title_font_size": 12},
+    yaxis={"title_font_size": 12},
+)
+st.plotly_chart(fig_bar, use_container_width=True)
 st.divider()
 
-# ======================== 6. 核心图表3：双饼图 ========================
+# ======================== 6. 核心图表3：双饼图（Plotly版） ========================
 st.subheader("🥧 姓氏类型 & 起源类型分布")
 col_pie1, col_pie2 = st.columns(2)
 
 with col_pie1:
     type_counts = df_filtered["姓氏类型"].value_counts()
-    fig1, ax1 = plt.subplots(figsize=(6, 4))
-    colors1 = ["#0066cc", "#ff6b6b"]
-    wedges, texts, autotexts = ax1.pie(
-        type_counts.values,
-        labels=type_counts.index,
-        autopct="%1.1f%%",
-        colors=colors1,
-        startangle=90,
-        textprops={"color": "#333", "fontsize": 10}
+    fig_pie1 = px.pie(
+        values=type_counts.values,
+        names=type_counts.index,
+        title="单姓/复姓占比",
+        color_discrete_sequence=["#0066cc", "#ff6b6b"],
     )
-    for autotext in autotexts:
-        autotext.set_color("#fff")
-        autotext.set_fontweight("bold")
-    ax1.set_title("单姓/复姓占比", fontsize=12, color="#0066cc", pad=10)
-    fig1.patch.set_facecolor("#f0f2f6")
-    st.pyplot(fig1)
+    fig_pie1.update_layout(
+        plot_bgcolor="#f0f2f6",
+        paper_bgcolor="#f0f2f6",
+        font={"family": "SimHei, Microsoft YaHei", "color": "#333"},
+        title={"font_size": 14, "color": "#0066cc"},
+    )
+    st.plotly_chart(fig_pie1, use_container_width=True)
 
 with col_pie2:
     origin_counts = df_filtered["起源类型"].value_counts()
-    fig2, ax2 = plt.subplots(figsize=(6, 4))
-    colors2 = plt.cm.Set3(np.linspace(0, 1, len(origin_counts)))
-    wedges2, texts2, autotexts2 = ax2.pie(
-        origin_counts.values,
-        labels=origin_counts.index,
-        autopct="%1.1f%%",
-        colors=colors2,
-        startangle=90,
-        textprops={"color": "#333", "fontsize": 9}
+    fig_pie2 = px.pie(
+        values=origin_counts.values,
+        names=origin_counts.index,
+        title="起源类型占比",
+        color_discrete_sequence=px.colors.qualitative.Set3,
     )
-    for autotext in autotexts2:
-        autotext.set_color("#fff")
-        autotext.set_fontweight("bold")
-    ax2.set_title("起源类型占比", fontsize=12, color="#0066cc", pad=10)
-    fig2.patch.set_facecolor("#f0f2f6")
-    st.pyplot(fig2)
+    fig_pie2.update_layout(
+        plot_bgcolor="#f0f2f6",
+        paper_bgcolor="#f0f2f6",
+        font={"family": "SimHei, Microsoft YaHei", "color": "#333"},
+        title={"font_size": 14, "color": "#0066cc"},
+    )
+    st.plotly_chart(fig_pie2, use_container_width=True)
 
 st.divider()
 
 # ======================== 7. 补充：数据表格 ========================
 st.subheader("📋 当前筛选的姓氏列表")
-st.dataframe(df_filtered[["排名", "姓氏", "起源地", "省份", "人口占比", "起源类型"]], use_container_width=True)
+st.dataframe(
+    df_filtered[["排名", "姓氏", "起源地", "省份", "人口占比", "起源类型"]],
+    use_container_width=True,
+    column_config={
+        "排名": st.column_config.NumberColumn("排名"),
+        "姓氏": st.column_config.TextColumn("姓氏"),
+        "起源地": st.column_config.TextColumn("起源地"),
+        "省份": st.column_config.TextColumn("省份"),
+        "人口占比": st.column_config.NumberColumn("人口占比(%)", format="%.2f"),
+        "起源类型": st.column_config.TextColumn("起源类型"),
+    }
+)
 
 st.markdown("""
 ### 📝 操作说明
 1. **筛选功能**：选省份/姓氏类型/起源类型，所有图表实时更新；
 2. **数据表格**：底部表格可查看所有筛选后的姓氏详细信息；
-3. **图表细节**：柱状图顶部有具体数值，饼图显示百分比。
+3. **图表细节**：柱状图顶部有具体数值，饼图显示百分比，点击图例可隐藏/显示对应类别。
 """)
