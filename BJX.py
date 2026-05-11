@@ -2,9 +2,22 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.font_manager import FontProperties
+import os
 
-# ======================== 1. 基础配置 ========================
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'PingFang SC']
+# ======================== 1. 强制加载你上传的字体（核心修复！） ========================
+# 1. 指定你上传的字体文件路径
+font_path = 'SourceHanSerifCN-Bold.otf'
+
+# 2. 创建字体对象
+if os.path.exists(font_path):
+    font_prop = FontProperties(fname=font_path)
+    # 全局设置matplotlib使用这个字体
+    plt.rcParams['font.family'] = font_prop.get_name()
+else:
+    # 备用方案：如果找不到字体，用系统自带的（本地运行也兼容）
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'PingFang SC']
+
 plt.rcParams['axes.unicode_minus'] = False
 
 st.set_page_config(
@@ -94,7 +107,7 @@ st.map(
 
 st.divider()
 
-# ======================== 5. 核心图表2：Top10柱状图 ========================
+# ======================== 5. 核心图表2：Top10柱状图（强制指定字体） ========================
 st.subheader("📊 姓氏人口占比Top10")
 df_top10 = df_filtered.sort_values("人口占比", ascending=False).head(10)
 
@@ -108,9 +121,12 @@ bars = ax.bar(
     linewidth=1
 )
 
-ax.set_xlabel("姓氏", fontsize=10, color="#333")
-ax.set_ylabel("人口占比(%)", fontsize=10, color="#333")
-ax.set_title(f"{'全国' if province == '全部' else province} 姓氏人口占比Top10", fontsize=12, color="#0066cc", pad=10)
+# 3. 所有中文标签强制使用你上传的字体
+ax.set_xlabel("姓氏", fontproperties=font_prop, fontsize=10, color="#333")
+ax.set_ylabel("人口占比(%)", fontproperties=font_prop, fontsize=10, color="#333")
+ax.set_title(f"{'全国' if province == '全部' else province} 姓氏人口占比Top10", 
+             fontproperties=font_prop, fontsize=12, color="#0066cc", pad=10)
+
 ax.set_facecolor("#f0f2f6")
 fig.patch.set_facecolor("#f0f2f6")
 
@@ -118,6 +134,10 @@ ax.grid(True, axis="y", alpha=0.3, color="#0066cc")
 ax.set_axisbelow(True)
 ax.tick_params(axis="x", colors="#333", rotation=45, labelsize=9)
 ax.tick_params(axis="y", colors="#333", labelsize=9)
+
+# 强制设置刻度标签的字体
+for label in ax.get_xticklabels():
+    label.set_fontproperties(font_prop)
 
 for bar in bars:
     height = bar.get_height()
@@ -130,7 +150,7 @@ for bar in bars:
 st.pyplot(fig)
 st.divider()
 
-# ======================== 6. 核心图表3：双饼图 ========================
+# ======================== 6. 核心图表3：双饼图（强制指定字体） ========================
 st.subheader("🥧 姓氏类型 & 起源类型分布")
 col_pie1, col_pie2 = st.columns(2)
 
@@ -144,12 +164,13 @@ with col_pie1:
         autopct="%1.1f%%",
         colors=colors1,
         startangle=90,
-        textprops={"color": "#333", "fontsize": 10}
+        # 饼图标签也强制用中文字体
+        textprops={"fontproperties": font_prop, "color": "#333", "fontsize": 10}
     )
     for autotext in autotexts:
         autotext.set_color("#fff")
         autotext.set_fontweight("bold")
-    ax1.set_title("单姓/复姓占比", fontsize=12, color="#0066cc", pad=10)
+    ax1.set_title("单姓/复姓占比", fontproperties=font_prop, fontsize=12, color="#0066cc", pad=10)
     fig1.patch.set_facecolor("#f0f2f6")
     st.pyplot(fig1)
 
@@ -163,12 +184,13 @@ with col_pie2:
         autopct="%1.1f%%",
         colors=colors2,
         startangle=90,
-        textprops={"color": "#333", "fontsize": 9}
+        # 饼图标签也强制用中文字体
+        textprops={"fontproperties": font_prop, "color": "#333", "fontsize": 9}
     )
     for autotext in autotexts2:
         autotext.set_color("#fff")
         autotext.set_fontweight("bold")
-    ax2.set_title("起源类型占比", fontsize=12, color="#0066cc", pad=10)
+    ax2.set_title("起源类型占比", fontproperties=font_prop, fontsize=12, color="#0066cc", pad=10)
     fig2.patch.set_facecolor("#f0f2f6")
     st.pyplot(fig2)
 
