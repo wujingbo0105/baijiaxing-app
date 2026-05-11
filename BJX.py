@@ -4,14 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
 
-# ======================== 1. 基础配置（关键：解决乱码） ========================
-# 自动适配不同环境的字体，本地/云端都能显示中文
-if 'linux' in sys.platform:
-    # Streamlit 云端环境：用自带的 DejaVu Sans + 中文字体
-    matplotlib.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'DejaVu Sans']
-else:
-    # 本地Windows/Mac环境：用你电脑里的字体
-    matplotlib.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'PingFang SC']
+# ======================== 1. 基础配置（云端中文乱码终极修复） ========================
+# 直接指定云端和本地都兼容的字体
+matplotlib.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
 matplotlib.rcParams['axes.unicode_minus'] = False
 
 # ======================== 2. 加载数据 ========================
