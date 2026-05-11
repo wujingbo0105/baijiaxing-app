@@ -4,9 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
 
-# ======================== 1. 基础配置（云端中文乱码终极修复） ========================
-# 直接指定云端和本地都兼容的字体
-matplotlib.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'SimHei', 'Microsoft YaHei']
+# ======================== 1. 基础配置（强制使用云端已安装的中文字体） ========================
+matplotlib.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
 matplotlib.rcParams['axes.unicode_minus'] = False
 
 # ======================== 2. 加载数据 ========================
