@@ -3,10 +3,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
+from matplotlib.font_manager import FontProperties
+import os
 
-# ======================== 1. 基础配置（强制使用云端已安装的中文字体） ========================
-matplotlib.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei']
+# ======================== 1. 强制加载内嵌中文字体（核心！） ========================
+# 加载仓库里的思源黑体
+font_path = 'SourceHanSerifCN-Bold.otf'
+if os.path.exists(font_path):
+    font_prop = FontProperties(fname=font_path)
+    matplotlib.rcParams['font.family'] = font_prop.get_name()
 matplotlib.rcParams['axes.unicode_minus'] = False
+
+# 页面基础配置
+st.set_page_config(
+    page_title="百家姓可视化项目",
+    page_icon="🏮",
+    layout="wide"
+)
+st.title("🏮 中国百家姓起源地实时可视化")
+st.divider()
 
 # ======================== 2. 加载数据 ========================
 @st.cache_data
