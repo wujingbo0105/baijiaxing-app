@@ -2,18 +2,17 @@ import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib
 
-# ======================== 1. 基础配置 ========================
-plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'PingFang SC']
-plt.rcParams['axes.unicode_minus'] = False
-
-st.set_page_config(
-    page_title="百家姓可视化项目",
-    page_icon="🏮",
-    layout="wide"
-)
-st.title("🏮 中国百家姓起源地实时可视化")
-st.divider()
+# ======================== 1. 基础配置（关键：解决乱码） ========================
+# 自动适配不同环境的字体，本地/云端都能显示中文
+if 'linux' in sys.platform:
+    # Streamlit 云端环境：用自带的 DejaVu Sans + 中文字体
+    matplotlib.rcParams['font.sans-serif'] = ['WenQuanYi Zen Hei', 'DejaVu Sans']
+else:
+    # 本地Windows/Mac环境：用你电脑里的字体
+    matplotlib.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS', 'PingFang SC']
+matplotlib.rcParams['axes.unicode_minus'] = False
 
 # ======================== 2. 加载数据 ========================
 @st.cache_data
