@@ -1,11 +1,11 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.font_manager import FontProperties  # 新增这行，修复FontProperties未定义问题
+from matplotlib.font_manager import FontProperties
 import numpy as np
 import os
 
-# ======================== 字体加载 ========================
+# ======================== 字体加载（你已下载好） ========================
 font_path = 'SourceHanSerifCN-Bold.otf'
 if os.path.exists(font_path):
     font_prop = FontProperties(fname=font_path)
@@ -14,20 +14,20 @@ else:
     plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']
 plt.rcParams['axes.unicode_minus'] = False
 
-# ======================== 百家姓古风主题配色（典雅书卷风） ========================
+# ======================== 古风CSS ========================
 st.markdown("""
 <style>
 .stApp {
-    background-color: #f8f1e3; /* 宣纸米黄底 */
+    background-color: #f8f1e3;
 }
 .block-container {
-    background-color: #fff9ec; /* 淡宣纸白 */
+    background-color: #fff9ec;
     border-radius: 14px;
     box-shadow: 0 3px 12px rgba(160, 82, 45, 0.15);
     padding: 2rem;
 }
 h1, h2, h3 {
-    color: #9c2c1a !important; /* 朱砂暗红 */
+    color: #9c2c1a !important;
     font-family: SimHei, KaiTi, serif;
 }
 div[data-baseweb="select"] {
@@ -37,7 +37,7 @@ div[data-baseweb="select"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ======================== 页面标题 ========================
+# ======================== 页面设置 ========================
 st.set_page_config(
     page_title="中华百家姓可视化",
     page_icon="📜",
@@ -46,30 +46,26 @@ st.set_page_config(
 st.title("📜 中华百家姓·起源与分布可视化")
 st.divider()
 
-# ======================== 加载全部数据 ========================
+# ======================== 加载所有数据 ========================
 @st.cache_data
 def load_all_data():
-    # 核心数据
     df_core = pd.read_excel("百家姓_项目完整数据.xlsx")
     df_core = df_core[["排名", "姓氏", "起源地", "省份", "人口占比(%)", "姓氏类型", "起源类型"]]
     df_core.rename(columns={"人口占比(%)": "人口占比"}, inplace=True)
     df_core = df_core.dropna(subset=["省份"])
 
-    # 前300名
     df_top300 = pd.read_excel("2026 中国姓氏前300名排名 + 人口（万人）+ 占比（%）.xlsx")
     df_top300.columns = ["排名_300", "姓氏_300", "人口_万人", "占比_300%"]
 
-    # 郡望堂号
     df_culture = pd.read_excel("完整姓氏 - 郡望 - 今地 - 堂号总表.xlsx")
 
     return df_core, df_top300, df_culture
 
 df, df_top300, df_culture = load_all_data()
 
-# ======================== 一、数据筛选 ========================
+# ======================== 筛选 ========================
 st.subheader("🔍 数据筛选")
 col1, col2, col3 = st.columns(3)
-
 with col1:
     province = st.selectbox("选择省份", ["全部"] + sorted(df["省份"].unique()))
 with col2:
@@ -88,7 +84,7 @@ if otype != "全部":
 st.info(f"筛选结果：共 {len(df_filtered)} 个姓氏")
 st.divider()
 
-# ======================== 二、姓氏起源地图 ========================
+# ======================== 地图 ========================
 st.subheader("🗺️ 姓氏起源地理分布")
 province_lonlat = {
     "北京": [116.40, 39.90], "天津": [117.20, 39.13], "河北": [114.30, 38.04], "山西": [112.53, 37.87],
@@ -102,21 +98,13 @@ province_lonlat = {
 }
 
 df_map = df_filtered.copy()
-# 修复：分别提取经度和纬度
 df_map["lon"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 30.67])[0])
 df_map["lat"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 30.67])[1])
 
-st.map(
-    df_map,
-    latitude="lat",
-    longitude="lon",
-    size="人口占比",
-    color="#9c2c1a",
-    zoom=4 if province == "全部" else 7
-)
+st.map(df_map, latitude="lat", longitude="lon", size="人口占比", color="#9c2c1a", zoom=4 if province == "全部" else 7)
 st.divider()
 
-# ======================== 三、人口TOP10柱状图（古风棕红） ========================
+# ======================== TOP10柱状图 ========================
 st.subheader("📊 姓氏人口占比 TOP10")
 df_top10 = df_filtered.sort_values("人口占比", ascending=False).head(10)
 
@@ -124,7 +112,7 @@ fig, ax = plt.subplots(figsize=(10, 5))
 colors = plt.cm.Reds(np.linspace(0.4, 0.8, len(df_top10)))
 bars = ax.bar(df_top10["姓氏"], df_top10["人口占比"], color=colors, edgecolor="#9c2c1a")
 
-ax.set_title("姓氏人口占比TOP10", color="#9c2c1a", fontsize=12)
+ax.set_title("姓氏人口占比TOP10", color="#9c2c1a")
 ax.set_ylabel("人口占比(%)", color="#5c2c21")
 ax.set_facecolor("#f8f1e3")
 fig.patch.set_facecolor("#f8f1e3")
@@ -136,7 +124,7 @@ for bar in bars:
 st.pyplot(fig)
 st.divider()
 
-# ======================== 四、双饼图（古风配色） ========================
+# ======================== 双饼图 ========================
 st.subheader("🥧 姓氏类型 & 起源类型分布")
 c1, c2 = st.columns(2)
 
@@ -144,12 +132,8 @@ with c1:
     type_counts = df_filtered["姓氏类型"].value_counts()
     fig1, ax1 = plt.subplots(figsize=(6, 4))
     colors1 = ["#9c2c1a", "#d2b48c"]
-    wedges, texts, autotexts = ax1.pie(
-        type_counts.values, labels=type_counts.index, autopct="%1.1f%%",
-        colors=colors1, startangle=90
-    )
-    for a in autotexts:
-        a.set_color("white")
+    wedges, texts, autotexts = ax1.pie(type_counts.values, labels=type_counts.index, autopct="%1.1f%%", colors=colors1, startangle=90)
+    for a in autotexts: a.set_color("white")
     ax1.set_title("单姓/复姓占比", color="#9c2c1a")
     fig1.patch.set_facecolor("#f8f1e3")
     st.pyplot(fig1)
@@ -158,19 +142,15 @@ with c2:
     origin_counts = df_filtered["起源类型"].value_counts()
     fig2, ax2 = plt.subplots(figsize=(6, 4))
     colors2 = ["#a0522d", "#cd853f", "#d2b48c", "#9c2c1a"]
-    wedges2, texts2, autotexts2 = ax2.pie(
-        origin_counts.values, labels=origin_counts.index, autopct="%1.1f%%",
-        colors=colors2, startangle=90
-    )
-    for a in autotexts2:
-        a.set_color("white")
+    wedges2, texts2, autotexts2 = ax2.pie(origin_counts.values, labels=origin_counts.index, autopct="%1.1f%%", colors=colors2, startangle=90)
+    for a in autotexts2: a.set_color("white")
     ax2.set_title("起源类型占比", color="#9c2c1a")
     fig2.patch.set_facecolor("#f8f1e3")
     st.pyplot(fig2)
 
 st.divider()
 
-# ======================== 五、前300名人口对比 ========================
+# ======================== 前300名 ========================
 if not df_top300.empty:
     st.subheader("📈 前300名姓氏人口对比")
     rank_range = st.slider("选择排名区间", 1, 300, (1, 50))
@@ -193,7 +173,7 @@ if not df_top300.empty:
     st.dataframe(df_top300, use_container_width=True)
     st.divider()
 
-# ======================== 六、郡望·堂号查询 ========================
+# ======================== 郡望堂号 ========================
 if not df_culture.empty:
     st.subheader("🏯 姓氏郡望·堂号查询")
     search = st.text_input("输入姓氏查询（如：李、王）")
@@ -208,7 +188,7 @@ if not df_culture.empty:
         st.dataframe(df_culture.head(20), use_container_width=True)
     st.divider()
 
-# ======================== 七、数据列表 ========================
+# ======================== 数据列表 ========================
 st.subheader("📜 筛选结果列表")
 st.dataframe(df_filtered, use_container_width=True)
 
