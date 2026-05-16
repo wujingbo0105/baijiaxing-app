@@ -142,7 +142,7 @@ st.divider()
 st.subheader("📊 姓氏人口占比Top10")
 df_top10 = df_filtered.sort_values("人口占比", ascending=False).head(10)
 
-fig, ax = plt.subplots(figsize=(7, 3.5))
+fig, ax = plt.subplots(figsize=(6, 3))
 colors = plt.cm.Reds(np.linspace(0.4, 0.9, len(df_top10)))
 bars = ax.bar(
     df_top10["姓氏"],
@@ -236,7 +236,7 @@ if not df_top300.empty:
     rank_range = st.slider("选择排名区间", 1, 300, (1, 50))
     df_rank = df_top300[(df_top300["排名_300"] >= rank_range[0]) & (df_top300["排名_300"] <= rank_range[1])]
 
-    fig, ax = plt.subplots(figsize=(7, 3.5))
+    fig, ax = plt.subplots(figsize=(6, 3))
     colors = plt.cm.Reds(np.linspace(0.4, 0.8, len(df_rank)))
     bars = ax.bar(df_rank["姓氏_300"], df_rank["人口_万人"], color=colors, edgecolor="#9c2c1a")
 
