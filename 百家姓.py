@@ -28,6 +28,7 @@ else:
 # 解决负号显示问题
 plt.rcParams['axes.unicode_minus'] = False
 plt.rcParams['figure.dpi'] = 100  # 控制图表清晰度，避免超尺寸
+plt.rcParams['figure.max_open_warning'] = False  # 关闭警告
 
 # ========== 2. 页面配置（不变） ==========
 st.set_page_config(
@@ -230,35 +231,44 @@ with col_pie2:
 
 st.divider()
 
-# ========== 7. 前300名人口对比（强制绑定字体 + 优化尺寸） ==========
+# ========== 7. 前300名人口对比（修复：改成横向条形图，固定高度，防止撑爆） ==========
 if not df_top300.empty:
     st.subheader("📈 前300名姓氏人口对比")
     rank_range = st.slider("选择排名区间", 1, 300, (1, 50))
     df_rank = df_top300[(df_top300["排名_300"] >= rank_range[0]) & (df_top300["排名_300"] <= rank_range[1])]
+    # 反转数据，让排名1在最上面
+    df_rank = df_rank.sort_values("排名_300", ascending=False)
 
-    fig, ax = plt.subplots(figsize=(7, 3.5))
+    # 关键修改：固定最大高度，防止图片过高/过宽
+    max_rows = len(df_rank)
+    fig_height = min(12, 0.3 * max_rows + 1)  # 最多12英寸高，不会无限拉长
+    fig, ax = plt.subplots(figsize=(8, fig_height))
+
     colors = plt.cm.Reds(np.linspace(0.4, 0.8, len(df_rank)))
-    bars = ax.bar(df_rank["姓氏_300"], df_rank["人口_万人"], color=colors, edgecolor="#9c2c1a")
+    bars = ax.barh(df_rank["姓氏_300"], df_rank["人口_万人"], color=colors, edgecolor="#9c2c1a")
 
     ax.set_title("姓氏人口对比", fontproperties=font_prop, color="#9c2c1a", fontsize=11)
-    ax.set_ylabel("人口（万人）", fontproperties=font_prop, color="#5c2c21", fontsize=9)
+    ax.set_xlabel("人口（万人）", fontproperties=font_prop, color="#5c2c21", fontsize=9)
     ax.set_facecolor("#f8f1e3")
     fig.patch.set_facecolor("#f8f1e3")
     
     # 刻度标签绑定字体
-    for label in ax.get_xticklabels():
-        label.set_fontproperties(font_prop)
-        label.set_fontsize(8)
     for label in ax.get_yticklabels():
+        label.set_fontproperties(font_prop)
+        label.set_fontsize(9)
+    for label in ax.get_xticklabels():
         label.set_fontproperties(font_prop)
         label.set_fontsize(8)
 
     # 数值标签绑定字体
     for bar in bars:
-        h = bar.get_height()
-        ax.text(bar.get_x()+bar.get_width()/2, h+50, f"{int(h)}万", 
-                ha="center", color="#9c2c1a", fontproperties=font_prop, fontsize=7)
+        width = bar.get_width()
+        ax.text(width + 50, bar.get_y() + bar.get_height()/2, 
+                f"{int(width)}万", va="center", color="#9c2c1a", 
+                fontproperties=font_prop, fontsize=8)
 
+    # 强制调整布局，防止文字被截断
+    plt.tight_layout()
     st.pyplot(fig)
     st.dataframe(df_top300, width='stretch')
     st.divider()
