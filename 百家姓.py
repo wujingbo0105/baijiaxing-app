@@ -74,7 +74,7 @@ def load_all_data():
 df, df_top300, df_culture = load_all_data()
 
 # ========== 4. 标题、筛选、地图（不变） ==========
-st.title("🏮 中国百家姓起源地可视化")
+st.title("🏮 中国百家姓可视化")
 st.divider()
 
 st.subheader("🔍 数据筛选")
@@ -142,7 +142,7 @@ st.divider()
 st.subheader("📊 姓氏人口占比Top10")
 df_top10 = df_filtered.sort_values("人口占比", ascending=False).head(10)
 
-fig, ax = plt.subplots(figsize=(8, 4))
+fig, ax = plt.subplots(figsize=(7, 3.5))
 colors = plt.cm.Reds(np.linspace(0.4, 0.9, len(df_top10)))
 bars = ax.bar(
     df_top10["姓氏"],
@@ -190,7 +190,7 @@ col_pie1, col_pie2 = st.columns(2)
 
 with col_pie1:
     type_counts = df_filtered["姓氏类型"].value_counts()
-    fig1, ax1 = plt.subplots(figsize=(5, 4))
+    fig1, ax1 = plt.subplots(figsize=(4, 3))
     colors1 = ["#9c2c1a", "#d2b48c"]
     wedges, texts, autotexts = ax1.pie(
         type_counts.values,
@@ -210,7 +210,7 @@ with col_pie1:
 
 with col_pie2:
     origin_counts = df_filtered["起源类型"].value_counts()
-    fig2, ax2 = plt.subplots(figsize=(5, 4))
+    fig2, ax2 = plt.subplots(figsize=(4, 3))
     colors2 = plt.cm.Set3(np.linspace(0, 1, len(origin_counts)))
     wedges2, texts2, autotexts2 = ax2.pie(
         origin_counts.values,
