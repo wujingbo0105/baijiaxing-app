@@ -6,6 +6,8 @@ from matplotlib.font_manager import FontProperties
 from PIL import Image
 import os
 from streamlit_baidu_map import baidu_map
+import folium
+from streamlit_folium import st_folium
 
 # ========== 1. 解决图片崩溃 + 字体乱码 ==========
 # 关闭图片像素限制（防止DecompressionBombError）
@@ -129,12 +131,23 @@ df_map = df_filtered.copy()
 df_map["lon"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 30.67])[0])
 df_map["lat"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 30.67])[1])
 
-baidu_map(
-    df_map,
-    lat="lat",
-    lon="lon",
-    zoom=4 if province == "全部" else 7,
-)
+# 初始化地图（默认中心在全国中间）
+m = folium.Map(location=[35.8617, 104.1954], zoom_start=4 if province == "全部" else 7)
+
+# 循环添加每个省份的标记
+for idx, row in df_map.iterrows():
+    folium.CircleMarker(
+        location=[row["lat"], row["lon"]],
+        radius=row["人口占比"] * 3,  # 用人口占比控制点的大小
+        color="#9c2c1a",
+        fill=True,
+        fill_color="#9c2c1a",
+        fill_opacity=0.7,
+        popup=f"{row['省份']} - {row['姓氏']}"
+    ).add_to(m)
+
+# 在Streamlit中显示地图
+st_folium(m, width=1200, height=600)
 st.divider()
 
 # ========== 5. 柱状图（强制绑定你的字体 + 优化尺寸） ==========
