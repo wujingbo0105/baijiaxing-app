@@ -3,6 +3,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+# ======================== 字体加载 ========================
+font_path = 'SourceHanSerifCN-Bold.otf'
+if os.path.exists(font_path):
+    font_prop = FontProperties(fname=font_path)
+    plt.rcParams['font.family'] = font_prop.get_name()
+else:
+    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']
+plt.rcParams['axes.unicode_minus'] = False
+
 # ======================== 百家姓古风主题配色（典雅书卷风） ========================
 st.markdown("""
 <style>
