@@ -5,6 +5,7 @@ import numpy as np
 from matplotlib.font_manager import FontProperties
 from PIL import Image
 import os
+from streamlit_baidu_map import baidu_map
 
 # ========== 1. 解决图片崩溃 + 字体乱码 ==========
 # 关闭图片像素限制（防止DecompressionBombError）
@@ -128,13 +129,11 @@ df_map = df_filtered.copy()
 df_map["lon"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 30.67])[0])
 df_map["lat"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 30.67])[1])
 
-st.map(
+baidu_map(
     df_map,
-    latitude="lat",
-    longitude="lon",
-    size="人口占比",
-    color="#9c2c1a",
-    zoom=4 if province == "全部" else 7
+    lat="lat",
+    lon="lon",
+    zoom=4 if province == "全部" else 7,
 )
 st.divider()
 
