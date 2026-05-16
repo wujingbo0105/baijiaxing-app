@@ -3,7 +3,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.font_manager import FontProperties
+from PIL import Image
 import os
+
+# 关键：关闭图片像素限制（解决崩溃）
+Image.MAX_IMAGE_PIXELS = None
+
+# 服务器中文字体兜底（防止乱码）
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Arial Unicode MS']
+plt.rcParams['axes.unicode_minus'] = False
 
 # ======================== 1. 字体配置（核心：全局绑定你的字体） ========================
 font_path = 'SourceHanSerifCN-Bold.otf'
@@ -231,7 +239,7 @@ if not df_top300.empty:
     rank_range = st.slider("选择排名区间", 1, 300, (1, 50))
     df_rank = df_top300[(df_top300["排名_300"] >= rank_range[0]) & (df_top300["排名_300"] <= rank_range[1])]
 
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(8, 4))
     colors = plt.cm.Reds(np.linspace(0.4, 0.8, len(df_rank)))
     bars = ax.bar(df_rank["姓氏_300"], df_rank["人口_万人"], color=colors, edgecolor="#9c2c1a")
 
@@ -254,7 +262,7 @@ if not df_top300.empty:
                 ha="center", color="#9c2c1a", fontproperties=font_prop)
 
     st.pyplot(fig)
-    st.dataframe(df_top300, use_container_width=True)
+    st.dataframe(df_top300, width='stretch')
     st.divider()
 
 # ======================== 10. 新增：郡望堂号查询（绑定字体） ========================
@@ -265,7 +273,7 @@ if not df_culture.empty:
         res = df_culture[df_culture["姓氏"].str.contains(search, na=False)]
         if len(res) > 0:
             st.success(f"找到 {len(res)} 条信息")
-            st.dataframe(res, use_container_width=True)
+            st.dataframe(res, width='stretch')
         else:
             st.warning("未找到")
     else:
@@ -274,7 +282,7 @@ if not df_culture.empty:
 
 # ======================== 11. 数据表格（原有） ========================
 st.subheader("📋 当前筛选的姓氏列表")
-st.dataframe(df_filtered[["排名", "姓氏", "起源地", "省份", "人口占比", "起源类型"]], use_container_width=True)
+st.dataframe(df_filtered, width='stretch')
 
 # ======================== 12. 操作说明（保留） ========================
 st.markdown("""
