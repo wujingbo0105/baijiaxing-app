@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties  # 新增这行，修复FontProperties未定义问题
 import numpy as np
 import os
 
@@ -35,10 +36,6 @@ div[data-baseweb="select"] {
 }
 </style>
 """, unsafe_allow_html=True)
-
-# ======================== 字体（支持中文+古风） ========================
-plt.rcParams['font.sans-serif'] = ['SimHei', 'KaiTi', 'Microsoft YaHei']
-plt.rcParams['axes.unicode_minus'] = False
 
 # ======================== 页面标题 ========================
 st.set_page_config(
