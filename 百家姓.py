@@ -1,20 +1,13 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-from matplotlib.font_manager import FontProperties
 import numpy as np
-import os
 
-# ======================== 字体加载（你已下载好） ========================
-font_path = 'SourceHanSerifCN-Bold.otf'
-if os.path.exists(font_path):
-    font_prop = FontProperties(fname=font_path)
-    plt.rcParams['font.family'] = font_prop.get_name()
-else:
-    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']
+# ======================== 全局中文支持（不加载外部字体） ========================
+plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'Arial Unicode MS']
 plt.rcParams['axes.unicode_minus'] = False
 
-# ======================== 古风CSS ========================
+# ======================== 古风配色 ========================
 st.markdown("""
 <style>
 .stApp {
@@ -28,7 +21,6 @@ st.markdown("""
 }
 h1, h2, h3 {
     color: #9c2c1a !important;
-    font-family: SimHei, KaiTi, serif;
 }
 div[data-baseweb="select"] {
     border: 1px solid #d2b48c;
@@ -37,7 +29,7 @@ div[data-baseweb="select"] {
 </style>
 """, unsafe_allow_html=True)
 
-# ======================== 页面设置 ========================
+# ======================== 页面标题 ========================
 st.set_page_config(
     page_title="中华百家姓可视化",
     page_icon="📜",
@@ -46,7 +38,7 @@ st.set_page_config(
 st.title("📜 中华百家姓·起源与分布可视化")
 st.divider()
 
-# ======================== 加载所有数据 ========================
+# ======================== 加载数据 ========================
 @st.cache_data
 def load_all_data():
     df_core = pd.read_excel("百家姓_项目完整数据.xlsx")
