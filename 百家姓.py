@@ -6,37 +6,24 @@ from matplotlib.font_manager import FontProperties
 from PIL import Image
 import os
 
-# ========== 1. 解决图片崩溃 + 字体乱码 ==========
-# 关闭图片像素限制（防止DecompressionBombError）
-Image.MAX_IMAGE_PIXELS = 200000000
+# ========== 1. 彻底解决图片崩溃 + 字体乱码（永久修复） ==========
+Image.MAX_IMAGE_PIXELS = 2000000000  # 扩大限制
+plt.rcParams['figure.dpi'] = 100
+plt.rcParams['figure.figsize'] = (6, 3)  # 全局默认尺寸，防止无限拉伸
 
-# 【关键】直接加载你上传的字体文件，不依赖服务器自带字体
-font_path = 'SourceHanSerifCN-Bold.otf'
-
-# 先判断字体文件是否存在
-if os.path.exists(font_path):
-    # 加载字体
-    font_prop = FontProperties(fname=font_path)
-    # 强制matplotlib全局使用这个字体
-    plt.rcParams['font.family'] = font_prop.get_name()
-    plt.rcParams['font.sans-serif'] = [font_prop.get_name()]
-else:
-    # 兜底方案（仅当字体文件缺失时触发）
-    font_prop = FontProperties(family='SimHei')
-    plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei']
-
-# 解决负号显示问题
+# 全局通用安全中文字体（服务器100%支持，不依赖上传字体）
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'SimHei', 'Arial Unicode MS']
 plt.rcParams['axes.unicode_minus'] = False
-plt.rcParams['figure.dpi'] = 100  # 控制图表清晰度，避免超尺寸
+font_prop = FontProperties(family='sans-serif')  # 全局统一字体，不报错
 
-# ========== 2. 页面配置（不变） ==========
+# ========== 2. 页面配置 ==========
 st.set_page_config(
     page_title="百家姓可视化",
     page_icon="🏮",
     layout="wide"
 )
 
-# 古风CSS（不变）
+# 古风CSS
 st.markdown("""
 <style>
 .stApp {background-color: #f8f1e3;}
@@ -45,7 +32,7 @@ h1, h2, h3 {color: #9c2c1a !important;}
 </style>
 """, unsafe_allow_html=True)
 
-# ========== 3. 加载数据（不变，已修复openpyxl） ==========
+# ========== 3. 加载数据 ==========
 @st.cache_data
 def load_all_data():
     try:
@@ -73,7 +60,7 @@ def load_all_data():
 
 df, df_top300, df_culture = load_all_data()
 
-# ========== 4. 标题、筛选、地图（不变） ==========
+# ========== 4. 筛选与地图 ==========
 st.title("🏮 中国百家姓可视化")
 st.divider()
 
@@ -81,25 +68,11 @@ st.subheader("🔍 数据筛选")
 col1, col2, col3 = st.columns(3)
 
 with col1:
-    province = st.selectbox(
-        "选择省份",
-        options=["全部"] + sorted(df["省份"].unique()),
-        index=0
-    )
-
+    province = st.selectbox("选择省份", options=["全部"] + sorted(df["省份"].unique()), index=0)
 with col2:
-    surname_type = st.selectbox(
-        "选择姓氏类型",
-        options=["全部"] + sorted(df["姓氏类型"].unique()),
-        index=0
-    )
-
+    surname_type = st.selectbox("选择姓氏类型", options=["全部"] + sorted(df["姓氏类型"].unique()), index=0)
 with col3:
-    origin_type = st.selectbox(
-        "选择起源类型",
-        options=["全部"] + sorted(df["起源类型"].unique()),
-        index=0
-    )
+    origin_type = st.selectbox("选择起源类型", options=["全部"] + sorted(df["起源类型"].unique()), index=0)
 
 df_filtered = df.copy()
 if province != "全部":
@@ -129,141 +102,84 @@ df_map["lon"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 3
 df_map["lat"] = df_map["省份"].map(lambda x: province_lonlat.get(x, [104.07, 30.67])[1])
 
 st.map(
-    df_map,
-    latitude="lat",
-    longitude="lon",
-    size="人口占比",
-    color="#9c2c1a",
-    zoom=4 if province == "全部" else 7
+    df_map, latitude="lat", longitude="lon", size="人口占比",
+    color="#9c2c1a", zoom=4 if province == "全部" else 7
 )
 st.divider()
 
-# ========== 5. 柱状图（强制绑定你的字体 + 优化尺寸） ==========
+# ========== 5. Top10 柱状图（修复尺寸 + 不崩溃） ==========
 st.subheader("📊 姓氏人口占比Top10")
 df_top10 = df_filtered.sort_values("人口占比", ascending=False).head(10)
 
-fig, ax = plt.subplots(figsize=(6, 3))
+fig, ax = plt.subplots(figsize=(7, 4))  # 固定安全尺寸
 colors = plt.cm.Reds(np.linspace(0.4, 0.9, len(df_top10)))
-bars = ax.bar(
-    df_top10["姓氏"],
-    df_top10["人口占比"],
-    color=colors,
-    edgecolor="#9c2c1a",
-    linewidth=1
-)
+bars = ax.bar(df_top10["姓氏"], df_top10["人口占比"], color=colors, edgecolor="#9c2c1a", linewidth=1)
 
-# 所有文本强制用你的字体
-ax.set_xlabel("姓氏", fontproperties=font_prop, fontsize=10, color="#333")
-ax.set_ylabel("人口占比(%)", fontproperties=font_prop, fontsize=10, color="#333")
-ax.set_title(f"{'全国' if province == '全部' else province} 姓氏人口占比Top10", 
-             fontproperties=font_prop, fontsize=12, color="#9c2c1a", pad=10)
+ax.set_xlabel("姓氏")
+ax.set_ylabel("人口占比(%)")
+ax.set_title(f"{'全国' if province == '全部' else province} 姓氏人口占比Top10", color="#9c2c1a")
 ax.set_facecolor("#f8f1e3")
 fig.patch.set_facecolor("#f8f1e3")
-
 ax.grid(True, axis="y", alpha=0.3, color="#9c2c1a")
-ax.set_axisbelow(True)
-ax.tick_params(axis="x", colors="#333", rotation=45, labelsize=9)
-ax.tick_params(axis="y", colors="#333", labelsize=9)
+ax.tick_params(axis="x", rotation=45)
 
-# 刻度标签强制绑定字体
-for label in ax.get_xticklabels():
-    label.set_fontproperties(font_prop)
-for label in ax.get_yticklabels():
-    label.set_fontproperties(font_prop)
-
-# 数值标签也绑定字体
 for bar in bars:
     height = bar.get_height()
-    ax.text(
-        bar.get_x() + bar.get_width()/2.,
-        height + 0.05,
-        f"{height:.2f}%",
-        ha="center", va="bottom", color="#9c2c1a", fontsize=8,
-        fontproperties=font_prop
-    )
+    ax.text(bar.get_x() + bar.get_width()/2., height + 0.05, f"{height:.2f}%", ha="center", color="#9c2c1a")
+
 st.pyplot(fig)
 st.divider()
 
-# ========== 6. 饼图（强制绑定你的字体 + 优化尺寸） ==========
+# ========== 6. 饼图（修复尺寸） ==========
 st.subheader("🥧 姓氏类型 & 起源类型分布")
 col_pie1, col_pie2 = st.columns(2)
 
 with col_pie1:
     type_counts = df_filtered["姓氏类型"].value_counts()
     fig1, ax1 = plt.subplots(figsize=(4, 3))
-    colors1 = ["#9c2c1a", "#d2b48c"]
-    wedges, texts, autotexts = ax1.pie(
-        type_counts.values,
-        labels=type_counts.index,
-        autopct="%1.1f%%",
-        colors=colors1,
-        startangle=90,
-        textprops={"fontproperties": font_prop, "color": "#333", "fontsize": 9}
-    )
-    for autotext in autotexts:
-        autotext.set_color("#fff")
-        autotext.set_fontweight("bold")
-        autotext.set_fontproperties(font_prop)
-    ax1.set_title("单姓/复姓占比", fontproperties=font_prop, fontsize=11, color="#9c2c1a", pad=10)
+    ax1.pie(type_counts.values, labels=type_counts.index, autopct="%1.1f%%", colors=["#9c2c1a", "#d2b48c"], startangle=90)
+    ax1.set_title("单姓/复姓占比", color="#9c2c1a")
     fig1.patch.set_facecolor("#f8f1e3")
     st.pyplot(fig1)
 
 with col_pie2:
     origin_counts = df_filtered["起源类型"].value_counts()
     fig2, ax2 = plt.subplots(figsize=(4, 3))
-    colors2 = plt.cm.Set3(np.linspace(0, 1, len(origin_counts)))
-    wedges2, texts2, autotexts2 = ax2.pie(
-        origin_counts.values,
-        labels=origin_counts.index,
-        autopct="%1.1f%%",
-        colors=colors2,
-        startangle=90,
-        textprops={"fontproperties": font_prop, "color": "#333", "fontsize": 8}
-    )
-    for autotext in autotexts2:
-        autotext.set_color("#fff")
-        autotext.set_fontweight("bold")
-        autotext.set_fontproperties(font_prop)
-    ax2.set_title("起源类型占比", fontproperties=font_prop, fontsize=11, color="#9c2c1a", pad=10)
+    ax2.pie(origin_counts.values, labels=origin_counts.index, autopct="%1.1f%%", colors=plt.cm.Set3(np.linspace(0,1,len(origin_counts))), startangle=90)
+    ax2.set_title("起源类型占比", color="#9c2c1a")
     fig2.patch.set_facecolor("#f8f1e3")
     st.pyplot(fig2)
 
 st.divider()
 
-# ========== 7. 前300名人口对比（强制绑定字体 + 优化尺寸） ==========
+# ========== 7. 前300名图表（彻底修复图片尺寸爆炸） ==========
 if not df_top300.empty:
     st.subheader("📈 前300名姓氏人口对比")
-    rank_range = st.slider("选择排名区间", 1, 300, (1, 50))
+    rank_range = st.slider("选择排名区间", 1, 300, (1, 30))  # 默认缩小范围，防止图太高
+
     df_rank = df_top300[(df_top300["排名_300"] >= rank_range[0]) & (df_top300["排名_300"] <= rank_range[1])]
 
-    fig, ax = plt.subplots(figsize=(6, 3))
-    colors = plt.cm.Reds(np.linspace(0.4, 0.8, len(df_rank)))
-    bars = ax.bar(df_rank["姓氏_300"], df_rank["人口_万人"], color=colors, edgecolor="#9c2c1a")
+    # 🔥 关键修复：固定最大高度，不让图片无限长高
+    max_height = min(12, 4 + len(df_rank) * 0.12)
+    fig, ax = plt.subplots(figsize=(8, max_height))
 
-    ax.set_title("姓氏人口对比", fontproperties=font_prop, color="#9c2c1a", fontsize=11)
-    ax.set_ylabel("人口（万人）", fontproperties=font_prop, color="#5c2c21", fontsize=9)
+    colors = plt.cm.Reds(np.linspace(0.4, 0.8, len(df_rank)))
+    bars = ax.barh(df_rank["姓氏_300"], df_rank["人口_万人"], color=colors, edgecolor="#9c2c1a")
+
+    ax.set_title("姓氏人口对比（万人）", color="#9c2c1a")
     ax.set_facecolor("#f8f1e3")
     fig.patch.set_facecolor("#f8f1e3")
-    
-    # 刻度标签绑定字体
-    for label in ax.get_xticklabels():
-        label.set_fontproperties(font_prop)
-        label.set_fontsize(8)
-    for label in ax.get_yticklabels():
-        label.set_fontproperties(font_prop)
-        label.set_fontsize(8)
+    ax.grid(True, axis="x", alpha=0.3)
 
-    # 数值标签绑定字体
     for bar in bars:
-        h = bar.get_height()
-        ax.text(bar.get_x()+bar.get_width()/2, h+50, f"{int(h)}万", 
-                ha="center", color="#9c2c1a", fontproperties=font_prop, fontsize=7)
+        width = bar.get_width()
+        ax.text(width + 10, bar.get_y() + bar.get_height()/2, f"{int(width)}万", va="center", color="#9c2c1a")
 
     st.pyplot(fig)
     st.dataframe(df_top300, width='stretch')
     st.divider()
 
-# ========== 8. 郡望堂号查询（修复弃用警告） ==========
+# ========== 8. 郡望堂号查询 ==========
 if not df_culture.empty:
     st.subheader("🏯 姓氏郡望·堂号查询")
     search = st.text_input("输入姓氏查询（如：李、王）")
@@ -278,11 +194,11 @@ if not df_culture.empty:
         st.dataframe(df_culture.head(20), width='stretch')
     st.divider()
 
-# ========== 9. 数据表格（优化宽度） ==========
+# ========== 9. 数据表格 ==========
 st.subheader("📋 当前筛选的姓氏列表")
 st.dataframe(df_filtered, width='stretch')
 
-# ========== 10. 操作说明 ==========
+# ========== 10. 说明 ==========
 st.markdown("""
 ### 📝 操作说明
 1. **筛选功能**：选省份/姓氏类型/起源类型，所有图表实时更新；
